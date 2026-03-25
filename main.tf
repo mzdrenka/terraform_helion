@@ -27,17 +27,17 @@ resource "aws_launch_template" "example" {
 
   name_prefix            = "terraform-"
   image_id               = "ami-04505e74c0741db8d"
-  instance_type          = "t3.micro"
+  instance_type          = "t3as.micro"
   vpc_security_group_ids = [aws_security_group.instance.id]
-  user_data              = <<-EOF
+  lifecycle {
+    create_before_destroy = true
+  }
+  user_data = base64encode(<<-EOF
               #!/bin/bash
               echo "Witaj, świecie" > index.html
               nohup busybox httpd -f -p ${var.server_port} &
               EOF
-  lifecycle {
-    create_before_destroy = true
-  }
-
+  )
 }
 
 resource "aws_security_group" "instance" {
@@ -54,12 +54,15 @@ resource "aws_security_group" "instance" {
 
 resource "aws_autoscaling_group" "example" {
 
-  launch_configuration = aws_launch_template.example.id
-  vpc_zone_identifier  = data.aws_subnets.default.ids
-  target_group_arns    = [aws_lb_target_group.asg.arn]
-  health_check_type    = "ELB"
-  min_size             = 2
-  max_size             = 10
+  launch_template {
+    id      = aws_launch_template.example.id
+    version = "$Latest"
+  }
+  vpc_zone_identifier = data.aws_subnets.default.ids
+  target_group_arns   = [aws_lb_target_group.asg.arn]
+  health_check_type   = "ELB"
+  min_size            = 2
+  max_size            = 10
   tag {
     key                 = "Name"
     value               = "terraform-asg-example"
