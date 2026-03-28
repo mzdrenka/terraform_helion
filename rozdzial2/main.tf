@@ -27,7 +27,7 @@ resource "aws_launch_template" "example" {
 
   name_prefix            = "terraform-"
   image_id               = "ami-04505e74c0741db8d"
-  instance_type          = "t3as.micro"
+  instance_type          = "t3.micro"
   vpc_security_group_ids = [aws_security_group.instance.id]
   lifecycle {
     create_before_destroy = true
